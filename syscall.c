@@ -49,16 +49,16 @@ argint(int n, int *ip)
 }
 
 // Fetch the nth word-sized system call argument as a pointer
-// to a block of memory of size bytes.  Check that the pointer
+// to a block of memory of size n bytes.  Check that the pointer
 // lies within the process address space.
 int
 argptr(int n, char **pp, int size)
 {
   int i;
-
+  
   if(argint(n, &i) < 0)
     return -1;
-  if(size < 0 || (uint)i >= proc->sz || (uint)i+size > proc->sz)
+  if((uint)i >= proc->sz || (uint)i+size > proc->sz)
     return -1;
   *pp = (char*)i;
   return 0;
@@ -99,6 +99,12 @@ extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
 
+//set environment variable PATH
+extern int sys_set_global_path(void);
+
+//get history command
+extern int sys_history(void);
+
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -121,6 +127,12 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+
+// set environment variable PATH
+[SYS_set_global_path]   sys_set_global_path,
+
+// get history command
+[SYS_history]   sys_history,
 };
 
 void

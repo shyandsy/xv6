@@ -20,3 +20,9 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
+
+// set environment variable PATH
+#define SYS_set_global_path     22
+
+// get history command
+#define SYS_history             23
