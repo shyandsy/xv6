@@ -46,6 +46,9 @@ trap(struct trapframe *tf)
     return;
   }
 
+  // * T_DIVIDE    divide error
+  sighandler_t handler;
+
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
     if(cpu->id == 0){
@@ -77,7 +80,49 @@ trap(struct trapframe *tf)
             cpu->id, tf->cs, tf->eip);
     lapiceoi();
     break;
-   
+  case T_DIVIDE:                  // SIGFPE
+    handler = proc->handlers[0];
+
+    if((int)handler == -1){
+      proc->killed = 1;
+    }
+    else
+    {     
+        // back address  
+        *((int*)(tf->esp)) = proc->context->eip;
+
+        // decrease esp by 4
+        tf->esp -= 4;
+
+        //set eip to handler address
+        tf->eip = (uint)proc->handlers[0];
+    }
+
+    break;
+  case T_PGFLT: // should be T_SEGNP but not work
+    
+    // observed: err = 6 when segment fault 
+    if(tf->err == 6){
+      handler = proc->handlers[1];
+      if((int)handler == -1){
+        proc->killed = 1;
+      }
+      else
+      {
+          // put the address pointed by the target process's eip on the top of user stack  
+          *((int*)(tf->esp)) = tf->eip;
+          
+            // decrease esp by 4
+          tf->esp -= 4;
+
+          //set eip to handler address
+          tf->eip = (uint)proc->handlers[1];
+      }
+    }else /*if(tf->err == 5)*/{
+      proc->killed = 1;
+    }
+
+    break;
   //PAGEBREAK: 13
   default:
     if(proc == 0 || (tf->cs&3) == 0){
@@ -108,4 +153,29 @@ trap(struct trapframe *tf)
   // Check if the process has been killed since we yielded
   if(proc && proc->killed && (tf->cs&3) == DPL_USER)
     exit();
+}
+
+/*signal system call*/
+int
+sys_signal(void){
+  int signum;
+  sighandler_t handler;
+  int ret = 0;
+
+  //get parameters
+  if(argint(0, &signum) < 0)
+    return -1;
+  if(argptr(1, (void*)&handler, sizeof(sighandler_t)) < 0)
+    return -1;
+
+  switch(signum){
+    case SIGFPE:
+      proc->handlers[0] = handler;
+      break;
+    case SIGSEGV:
+      proc->handlers[1] = handler;
+      break;
+  }
+
+  return ret;
 }

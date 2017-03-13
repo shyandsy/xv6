@@ -32,3 +32,4 @@ SYSCALL(uptime)
 
 SYSCALL(set_global_path)
 SYSCALL(history)
+SYSCALL(signal)

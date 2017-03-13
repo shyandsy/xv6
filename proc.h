@@ -51,6 +51,8 @@ struct context {
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
+//typedef void (*sighandler_t)(void);
+
 // Per-process state
 struct proc {
   uint sz;                     // Size of process memory (bytes)
@@ -66,6 +68,8 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+
+  sighandler_t handlers[2];    // trap handler: SIGFPE and SIGSEGV
 };
 
 // Process memory is laid out contiguously, low addresses first:

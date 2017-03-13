@@ -22,11 +22,15 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+
 // add environment variable PATH
 int set_global_path(char *buffer);
 
 // get history command
 int history(char *buffer, int historyId);
+
+// signal command
+int signal(int, sighandler_t);
 
 // ulib.c
 int stat(char*, struct stat*);

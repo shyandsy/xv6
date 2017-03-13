@@ -70,6 +70,10 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+  //initialize the trap handlers to 1
+  p->handlers[0] = (sighandler_t)-1;
+  p->handlers[1] = (sighandler_t)-1;
+
   return p;
 }
 

@@ -26,3 +26,6 @@
 
 // get history command
 #define SYS_history             23
+
+// signal command
+#define SYS_signal              24

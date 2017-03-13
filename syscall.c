@@ -105,6 +105,9 @@ extern int sys_set_global_path(void);
 //get history command
 extern int sys_history(void);
 
+//get history command
+extern int sys_signal(void);
+
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -132,7 +135,10 @@ static int (*syscalls[])(void) = {
 [SYS_set_global_path]   sys_set_global_path,
 
 // get history command
-[SYS_history]   sys_history,
+[SYS_history]           sys_history,
+
+// signal
+[SYS_signal]            sys_signal
 };
 
 void
