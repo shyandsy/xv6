@@ -357,8 +357,10 @@ static uint
 bmap(struct inode *ip, uint bn)
 {
   uint addr, *a;
+  short entry, offset;
   struct buf *bp;
 
+  // direct
   if(bn < NDIRECT){
     if((addr = ip->addrs[bn]) == 0)
       ip->addrs[bn] = addr = balloc(ip->dev);
@@ -366,6 +368,7 @@ bmap(struct inode *ip, uint bn)
   }
   bn -= NDIRECT;
 
+  // single indirect
   if(bn < NINDIRECT){
     // Load indirect block, allocating if necessary.
     if((addr = ip->addrs[NDIRECT]) == 0)
@@ -376,6 +379,42 @@ bmap(struct inode *ip, uint bn)
       a[bn] = addr = balloc(ip->dev);
       log_write(bp);
     }
+    brelse(bp);
+    return addr;
+  }
+  bn -= NINDIRECT;
+
+  // double indirect
+  if(bn < NDOUBLE_INDIRECT){
+    // Load double indirect block, allocating if necessary.
+    if((addr = ip->addrs[NDIRECT + 1]) == 0)
+      ip->addrs[NDIRECT + 1] = addr = balloc(ip->dev);
+    
+    // get the double indirect table, first level
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+    
+    // calculate the entry number and the index
+    entry = bn / NDINDIRECT_PER_ENTRY;
+    offset = bn % NDINDIRECT_PER_ENTRY;
+    
+    // load level B table, allocating if necessary
+    if((addr = a[entry]) == 0){
+      a[entry] = addr = balloc(ip->dev);
+      log_write(bp);
+    }
+    brelse(bp);
+
+    // get the double indirect table, second level
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+
+    // if the offset doesnt exist, assign a block to this entry
+    if((addr = a[offset]) == 0){
+      a[offset] = addr = balloc(ip->dev);
+      log_write(bp);
+    }
+
     brelse(bp);
     return addr;
   }
