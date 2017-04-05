@@ -108,6 +108,11 @@ extern int sys_history(void);
 //get history command
 extern int sys_signal(void);
 
+// set priority
+extern int sys_set_prio(void);
+
+extern int sys_yield(void);
+
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -138,7 +143,13 @@ static int (*syscalls[])(void) = {
 [SYS_history]           sys_history,
 
 // signal
-[SYS_signal]            sys_signal
+[SYS_signal]            sys_signal,
+
+// set priority
+[SYS_set_prio]          sys_set_prio,
+
+// yield
+[SYS_sys_yield]         sys_yield
 };
 
 void

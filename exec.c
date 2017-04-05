@@ -116,6 +116,10 @@ exec(char *path, char **argv)
       return -1;
   }
 
+  #ifdef DML    //reset the priority to 2
+  reset_priority();
+  #endif
+
   ilock(ip);
   pgdir = 0;
 

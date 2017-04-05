@@ -29,3 +29,9 @@
 
 // signal command
 #define SYS_signal              24
+
+// set priority
+#define SYS_set_prio            25
+
+// yield
+#define SYS_sys_yield           26

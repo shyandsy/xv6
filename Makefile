@@ -79,6 +79,16 @@ ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
 # FreeBSD ld wants ``elf_i386_fbsd''
 LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null)
 
+ifeq ($(SCHEDFLAG), FCFS)
+	CFLAGS += -D FCFS
+else ifeq ($(SCHEDFLAG), SML)
+	CFLAGS += -D SML
+else ifeq ($(SCHEDFLAG), DML)
+	CFLAGS += -D DML
+else
+	CFLAGS += -D DEFAULT
+endif
+
 xv6.img: bootblock kernel fs.img
 	dd if=/dev/zero of=xv6.img count=10000
 	dd if=bootblock of=xv6.img conv=notrunc
@@ -173,7 +183,8 @@ UPROGS=\
 	_stressfs\
 	_usertests\
 	_wc\
-	_zombie\
+	_zombie
+	#_sanity\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -233,7 +244,7 @@ qemu-gdb: fs.img xv6.img .gdbinit
 qemu-nox-gdb: fs.img xv6.img .gdbinit
 	@echo "*** Now run 'gdb'." 1>&2
 	$(QEMU) -nographic $(QEMUOPTS) -S $(QEMUGDB)
-
+	
 # CUT HERE
 # prepare dist for students
 # after running make dist, probably want to

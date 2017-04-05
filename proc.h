@@ -70,6 +70,11 @@ struct proc {
   char name[16];               // Process name (debugging)
 
   sighandler_t handlers[2];    // trap handler: SIGFPE and SIGSEGV
+
+  //time
+  uint creation_time;
+
+  int priority; // 1, 2, 3
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -77,3 +82,6 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+//reset priority to 2
+void reset_priority();
