@@ -166,6 +166,11 @@ found:
   p->handlers[0] = (sighandler_t)-1;
   p->handlers[1] = (sighandler_t)-1;
 
+	p->ctime = ticks;
+	p->stime = 0;
+	p->retime = 0;
+	p->rutime = 0;
+
   return p;
 }
 
@@ -212,6 +217,7 @@ userinit(void)
   p->cwd = namei("/");
 
   p->state = RUNNABLE;
+  p->retime = ticks;
 }
 
 // Grow current process's memory by n bytes.
@@ -307,6 +313,8 @@ fork(void)
  
   pid = np->pid;
   np->state = RUNNABLE;
+
+  np->retime = ticks;
   safestrcpy(np->name, proc->name, sizeof(proc->name));
   return pid;
 }
@@ -439,7 +447,6 @@ wait(void)
 void
 scheduler(void)
 {
-  static uint counter = 0;
   struct proc *p = 0;
 
   for(;;){
@@ -462,6 +469,7 @@ scheduler(void)
       proc = p;
       switchuvm(p);
       p->state = RUNNING;
+      p->rutime = ticks;
       swtch(&cpu->scheduler, proc->context);
       switchkvm();
 
@@ -497,6 +505,7 @@ scheduler(void)
       proc = firstcome_proc;
       switchuvm(firstcome_proc);
       firstcome_proc->state = RUNNING;
+      firstcome_proc->rutime = ticks;
       swtch(&cpu->scheduler, proc->context);
       switchkvm();
     }
@@ -508,7 +517,7 @@ scheduler(void)
     #endif
     /*******************************************************/
 
-    //SML
+    //SMLint
     #ifdef SML
     
     // choose from the priority queue 3
@@ -529,6 +538,7 @@ scheduler(void)
       proc = p;
       switchuvm(p);
       p->state = RUNNING;
+      p->rutime = ticks;
       swtch(&cpu->scheduler, proc->context);
       switchkvm();
     }
@@ -544,7 +554,10 @@ scheduler(void)
     #ifdef DML
 
     static struct proc *lastp = 0;
+    static uint counter = 0;
 
+    counter ++;
+    
     // sheduler only works on counter % QUANTA == 0
     if(counter % QUANTA == 0){
       // choose from the priority queue 3
@@ -565,6 +578,7 @@ scheduler(void)
         proc = p;
         switchuvm(p);
         p->state = RUNNING;
+        p->rutime = ticks;
         swtch(&cpu->scheduler, proc->context);
         switchkvm();
       }
@@ -575,16 +589,15 @@ scheduler(void)
       if(lastp != 0 && lastp->state == RUNNABLE){
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it
-        // before jumping back to us.
+        // before jumping back to->state us.
         proc = lastp;
         switchuvm(lastp);
         p->state = RUNNING;
+        p->rutime = ticks;
         swtch(&cpu->scheduler, proc->context);
         switchkvm();
       } 
-    }
-    
-    
+    } 
 
     // Process is done running for now.
     // It should have changed its p->state before coming back.
@@ -624,6 +637,7 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   proc->state = RUNNABLE;
+  proc->retime = ticks;
   sched();
   release(&ptable.lock);
 }
@@ -673,6 +687,7 @@ sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   proc->chan = chan;
   proc->state = SLEEPING;
+  	proc->stime = ticks;
   sched();
 
   // Tidy up.
@@ -711,6 +726,7 @@ wakeup1(void *chan)
       /******************************/
 
       p->state = RUNNABLE;
+      p->retime = ticks;
     }
       
 }
@@ -737,8 +753,10 @@ kill(int pid)
     if(p->pid == pid){
       p->killed = 1;
       // Wake process from sleep if necessary.
-      if(p->state == SLEEPING)
+      if(p->state == SLEEPING){
         p->state = RUNNABLE;
+        p->retime = ticks;
+      }
       release(&ptable.lock);
       return 0;
     }
@@ -855,4 +873,50 @@ void reset_priority(){
   }
   proc->priority = 2;
   release(&ptable.lock);
+}
+
+int
+wait2(int *retime, int *rutime, int *stime)
+{
+	struct proc *p;
+	int havekids, pid;
+
+	acquire(&ptable.lock);
+	for (;;) {
+		// Scan through table looking for exited children.
+		havekids = 0;
+		for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+			if (p->parent != proc)
+				continue;
+			havekids = 1;
+			if (p->state == ZOMBIE) {
+
+				*retime = p-> retime;
+				*rutime = p->rutime;
+				*stime = p->stime;
+
+				// Found one.
+				pid = p->pid;
+				kfree(p->kstack);
+				p->kstack = 0;
+				freevm(p->pgdir);
+				p->pid = 0;
+				p->parent = 0;
+				p->name[0] = 0;
+				p->killed = 0;
+				p->state = UNUSED;
+				release(&ptable.lock);
+				return pid;
+			}
+		}
+
+		// No point waiting if we don't have any children.
+		if (!havekids || proc->killed) {
+			release(&ptable.lock);
+			return -1;
+		}
+
+		// Wait for children to exit.  (See wakeup1 call in proc_exit.)
+		sleep(proc, &ptable.lock);  //DOC: wait-sleep
+	}
 }

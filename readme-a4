@@ -1,0 +1,11 @@
+Assignment 4
+
+Group
+	Yang Shi
+	Zongqing Hou
+
+
+This assignment is for four different type of scheduling machiasm, default, first come first serve, SML and DML
+
+Usage
+	make SCHEDFLAG=(method)

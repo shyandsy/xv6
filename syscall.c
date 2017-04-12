@@ -113,6 +113,8 @@ extern int sys_set_prio(void);
 
 extern int sys_yield(void);
 
+extern int sys_wait2(void);
+
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -149,7 +151,9 @@ static int (*syscalls[])(void) = {
 [SYS_set_prio]          sys_set_prio,
 
 // yield
-[SYS_sys_yield]         sys_yield
+[SYS_sys_yield]         sys_yield,
+
+[SYS_wait2]         sys_wait2,
 };
 
 void

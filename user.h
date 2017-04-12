@@ -32,6 +32,12 @@ int history(char *buffer, int historyId);
 // signal command
 int signal(int, sighandler_t);
 
+int set_prio(int);
+//yield
+int sys_yield(void);
+
+int wait2(int*, int*, int*);
+
 // ulib.c
 int stat(char*, struct stat*);
 char* strcpy(char*, char*);

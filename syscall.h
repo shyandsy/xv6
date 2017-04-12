@@ -35,3 +35,5 @@
 
 // yield
 #define SYS_sys_yield           26
+
+#define SYS_wait2               27
