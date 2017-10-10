@@ -76,23 +76,26 @@ sys_history(void){
 add a command to the history array
 */
 void addHistory(char *command){
-  int length = strlen(command) <= MAX_COMMAND_LENGTH ? strlen(command) : MAX_COMMAND_LENGTH-1;
-  int i;
+if((command[0]!='\0')
+{
+    int length = strlen(command) <= MAX_COMMAND_LENGTH ? strlen(command) : MAX_COMMAND_LENGTH-1;
+    int i;
 
-  if(commandHistoryCounter < MAX_HISTORY){
-    commandHistoryCounter++;
-  }else{
+    if(commandHistoryCounter < MAX_HISTORY){
+      commandHistoryCounter++;
+    }else{
     // move back
-    for(i = 0; i < MAX_HISTORY - 1; i++){
-      memmove(commandHistory[i], commandHistory[i+1], sizeof(char)* MAX_COMMAND_LENGTH);
-    }   
-  }
+      for(i = 0; i < MAX_HISTORY - 1; i++){
+        memmove(commandHistory[i], commandHistory[i+1], sizeof(char)* MAX_COMMAND_LENGTH);
+      }   
+    }
 
   //store
-  memmove(commandHistory[commandHistoryCounter-1], command, sizeof(char)* length);
-  commandHistory[commandHistoryCounter-1][length] = '\0';
+    memmove(commandHistory[commandHistoryCounter-1], command, sizeof(char)* length);
+    commandHistory[commandHistoryCounter-1][length] = '\0';
 
-  currentCommandId = commandHistoryCounter - 1;
+    currentCommandId = commandHistoryCounter - 1;
+  }
 }
 
 static void
@@ -411,12 +414,12 @@ consoleintr(int (*getc)(void))
         }
 
         //show last command
-        currentCommandId --;
         for(int i=0; i < strlen(commandHistory[currentCommandId]); i++){
           x = commandHistory[currentCommandId][i];
           consputc(x);
           input.buf[input.e++] = x;
         }
+        currentCommandId --;
         input.pos = input.e;
       }
       break;
